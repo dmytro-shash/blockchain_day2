@@ -1,8 +1,9 @@
 use hex;
-use sha2::{Sha256, Digest};
+use sha2::{Digest, Sha256};
 
 use crate::types::Hash;
 
+#[derive(Default, Debug)]
 pub struct Transaction {
     from: String,
     to: String,
@@ -10,14 +11,15 @@ pub struct Transaction {
 }
 
 impl Transaction {
-    fn new(from: String, to: String, amount: u64) -> Self {
+    pub fn new(from: String, to: String, amount: u64) -> Self {
         Transaction {
             from,
             to,
             amount,
         }
     }
-    fn hash(&self) -> Hash {
+
+    pub fn hash(&self) -> Hash {
         let mut hasher = Sha256::new();
 
         hasher.update(format!(
@@ -41,6 +43,6 @@ mod tests {
     #[test]
     fn hash_tx() {
         let tx = Transaction::new("alice".to_string(), "bob".to_string(), 12);
-        println!("{}", tx.hash());
+        dbg!(tx.hash());
     }
 }
