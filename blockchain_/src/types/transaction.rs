@@ -3,7 +3,7 @@ use sha2::{Digest, Sha256};
 
 use crate::types::Hash;
 
-#[derive(Default, Debug)]
+#[derive(Default, Debug, Clone)]
 pub struct Transaction {
     from: String,
     to: String,

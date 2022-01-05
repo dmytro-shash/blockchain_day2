@@ -8,3 +8,4 @@ edition = "2018"
 [dependencies]
 hex="*"
 sha2="*"
+chrono = "0.4"

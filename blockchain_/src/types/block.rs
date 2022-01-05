@@ -2,24 +2,21 @@ use sha2::{Digest, Sha256};
 
 use crate::types::{Hash, Transaction};
 
-#[derive(Default, Debug)]
+#[derive(Default, Debug, Clone)]
 pub struct Block {
-    transactions: Vec<Transaction>,
-    hash: Option<Hash>,
-    prev_hash: Option<Hash>,
+    pub(crate) transactions: Vec<Transaction>,
+    pub(crate) hash: Option<Hash>,
+    pub(crate) prev_hash: Option<Hash>,
 }
 
 
 impl Block {
-    pub fn new(hash: Option<Hash>, prev_hash: Option<Hash>,) -> Self {
-        let mut block = Block {
+    pub fn new(hash: Option<Hash>, prev_hash: Option<Hash>) -> Self {
+        Block {
             hash,
             prev_hash,
             ..Default::default()
-        };
-        block.update_hash();
-
-        block
+        }
     }
 
     pub fn add_transaction(&mut self, transaction: Transaction) {
@@ -51,7 +48,7 @@ mod tests {
 
     #[test]
     fn genesis_block_creation() {
-        let mut genesis_block = Block::new(None,None);
+        let mut genesis_block = Block::new(None, None);
 
         let tx = Transaction::new("alice".to_string(), "bob".to_string(), 10);
 
