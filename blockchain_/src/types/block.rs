@@ -1,45 +1,54 @@
-use sha2::{Digest, Sha256};
+use chrono::prelude::*;
+use crypto::digest::Digest;
+use crypto::sha2::Sha256;
+use ethereum_types::U256;
+use serde::{Deserialize, Serialize};
 
-use crate::types::{Hash, Transaction};
+use crate::BlockHash;
+use crate::types::BlockHash;
 
-#[derive(Default, Debug, Clone)]
+use super::Transaction;
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct Block {
-    pub(crate) transactions: Vec<Transaction>,
-    pub(crate) hash: Option<Hash>,
-    pub(crate) prev_hash: Option<Hash>,
+    pub timestamp: i64,
+    pub nonce: u64,
+    pub previous_hash: BlockHash,
+    pub hash: BlockHash,
+    pub transactions: Vec<Transaction>,
 }
 
-
 impl Block {
-    pub fn new(hash: Option<Hash>, prev_hash: Option<Hash>) -> Self {
+    pub fn new(
+        nonce: u64,
+        previous_hash: BlockHash,
+        transactions: Vec<Transaction>,
+    ) -> Block {
         let mut block = Block {
-            hash,
-            prev_hash,
-            ..Default::default()
+            timestamp: Utc::now().timestamp_millis(),
+            nonce,
+            previous_hash,
+            hash: BlockHash::default(),
+            transactions,
         };
-        block.update_hash();
+        block.hash = block.calculate_hash();
+
         block
     }
 
-    pub fn add_transaction(&mut self, transaction: Transaction) {
-        self.transactions.push(transaction);
-        self.update_hash();
-    }
+    pub fn calculate_hash(&self) -> BlockHash {
+        let mut hashable_data = self.clone();
+        hashable_data.hash = BlockHash::default();
+        let serialized = serde_json::to_string(&hashable_data).unwrap();
 
-    pub fn hash(&self) -> Hash {
+
+        let mut byte_hash = <[u8; 32]>::default();
         let mut hasher = Sha256::new();
 
-        hasher.update(format!("{:?}", self.prev_hash.clone()));
+        hasher.input_str(&serialized);
+        hasher.result(&mut byte_hash);
 
-        for tx in self.transactions.iter() {
-            hasher.update(tx.hash())
-        }
-
-        hex::encode(hasher.finalize())
-    }
-
-    pub fn update_hash(&mut self) {
-        self.hash = Some(self.hash());
+        U256::from(byte_hash)
     }
 }
 
@@ -49,13 +58,9 @@ mod tests {
     use super::*;
 
     #[test]
-    fn genesis_block_creation() {
-        let mut genesis_block = Block::new(None, None);
+    fn block_initializing() {
+        let block = Block::new(10, BlockHash::default(), vec![]);
 
-        let tx = Transaction::new("alice".to_string(), "bob".to_string(), 10);
-
-        genesis_block.add_transaction(tx);
-
-        dbg!(genesis_block);
+        dbg!(block);
     }
 }
