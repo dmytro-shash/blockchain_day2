@@ -4,5 +4,4 @@ mod transaction;
 mod block;
 mod blockchain;
 
-
 pub type Hash = String;

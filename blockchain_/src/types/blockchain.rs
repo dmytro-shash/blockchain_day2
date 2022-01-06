@@ -2,8 +2,9 @@ use chrono::prelude::Utc;
 use hex;
 use sha2::{Digest, Sha256};
 
+use crate::types::{Hash, Transaction};
 use crate::types::block::Block;
-use crate::types::Transaction;
+
 
 #[derive(Debug, Clone)]
 struct Blockchain {
@@ -29,15 +30,20 @@ impl Blockchain {
         self.transaction_pool.push(Transaction::new(from, to, amount));
     }
 
-    pub fn new_block(&mut self) {
-        let peek = self.transaction_pool.first();
-        self.transaction_pool.remove(0);
 
-        Block {
-            transactions: vec![peek],
+    pub fn new_block(&mut self) {
+        let mut block = Block {
+            transactions: vec![self.transaction_pool.first().expect("there is no tx in tx_pool to produce next blocks").clone()],
             hash: None,
-            prev_hash: self.blocks.pop().hash,
-        }
+            prev_hash: self.get_last_block_hash(),
+        };
+        self.transaction_pool.remove(0);
+        block.update_hash();
+        self.blocks.push(block);
+    }
+
+    pub fn get_last_block_hash(&self) -> Option<Hash> {
+        self.blocks.last().map(|block| block.hash())
     }
 }
 
@@ -46,12 +52,18 @@ mod tests {
     use super::*;
 
     #[test]
+    #[should_panic]
     fn test_initial_blockchain() {
-        let mut blockchain = Blockchain::new();
-        blockchain.new_transaction("bob".to_string(), "alice".to_string(), 100);
+        let mut blc = Blockchain::new();
+        dbg!(blc.clone());
+        dbg!(blc.get_last_block_hash());
+        blc.new_transaction("bob".to_string(), "alice".to_string(), 100);
+        blc.new_transaction("alice".to_string(), "frank".to_string(), 50);
+        blc.new_block();
+        blc.new_block();
+        blc.new_block();
 
-
-        dbg!(blockchain);
+        dbg!(blc);
     }
 }
 

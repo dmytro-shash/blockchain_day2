@@ -12,11 +12,13 @@ pub struct Block {
 
 impl Block {
     pub fn new(hash: Option<Hash>, prev_hash: Option<Hash>) -> Self {
-        Block {
+        let mut block = Block {
             hash,
             prev_hash,
             ..Default::default()
-        }
+        };
+        block.update_hash();
+        block
     }
 
     pub fn add_transaction(&mut self, transaction: Transaction) {
@@ -24,7 +26,7 @@ impl Block {
         self.update_hash();
     }
 
-    fn hash(&self) -> Hash {
+    pub fn hash(&self) -> Hash {
         let mut hasher = Sha256::new();
 
         hasher.update(format!("{:?}", self.prev_hash.clone()));
@@ -36,7 +38,7 @@ impl Block {
         hex::encode(hasher.finalize())
     }
 
-    fn update_hash(&mut self) {
+    pub fn update_hash(&mut self) {
         self.hash = Some(self.hash());
     }
 }
