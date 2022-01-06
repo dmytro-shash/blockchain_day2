@@ -4,7 +4,6 @@ use crypto::sha2::Sha256;
 use ethereum_types::U256;
 use serde::{Deserialize, Serialize};
 
-use crate::BlockHash;
 use crate::types::BlockHash;
 
 use super::Transaction;
