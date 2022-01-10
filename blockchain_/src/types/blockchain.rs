@@ -1,12 +1,16 @@
 use std::sync::{Arc, Mutex};
 
-use anyhow::Result;
+use chrono::Utc;
 use thiserror::Error;
 
 use crate::types::{BlockHash, BlockVec};
 use crate::types::block::Block;
+use crate::types::transaction::Transaction;
 
 type SyncedBlockVec = Arc<Mutex<BlockVec>>;
+pub type TransactionVec = Vec<Transaction>;
+
+type SyncedTransactionVec = Arc<Mutex<TransactionVec>>;
 
 #[derive(Error, PartialEq, Debug)]
 #[allow(clippy::enum_variant_names)]
@@ -23,6 +27,7 @@ pub enum BlockchainError {
 #[derive(Debug, Clone)]
 pub struct Blockchain {
     blocks: SyncedBlockVec,
+    transaction_pool: SyncedTransactionVec,
 }
 
 impl Blockchain {
@@ -36,6 +41,7 @@ impl Blockchain {
 
         Blockchain {
             blocks: synced_blocks,
+            transaction_pool: Arc::new(Mutex::new(vec![])),
         }
     }
     fn create_genesis_block() -> Block {
@@ -64,8 +70,21 @@ impl Blockchain {
         blocks.clone()
     }
 
+    pub fn add_transaction(&self, transaction: Transaction) {
+        let mut transactions = self.transaction_pool.lock().unwrap();
+        transactions.push(transaction);
+    }
 
-    pub fn add_block(&self, block: Block) -> Result<()> {
+    pub fn pop_transaction(&self) -> TransactionVec {
+        let mut transactions = self.transaction_pool.lock().unwrap();
+        let transactions_clone = transactions.clone();
+        transactions.clear();
+
+        transactions_clone
+    }
+
+
+    /*pub fn add_block(&self, block: Block) -> Result<()> {
         let mut blocks = self.blocks.lock().unwrap();
         let last = &blocks[blocks.len() - 1];
 
@@ -85,6 +104,17 @@ impl Blockchain {
 
         Ok(())
     }
+
+     */
+
+    pub fn new_block(&mut self) {
+        let mut blocks = self.blocks.lock().unwrap();
+        let last = &blocks[blocks.len() - 1];
+
+        let new_block = Block::new(0, last.hash,self.pop_transaction());
+
+        blocks.push(new_block);
+    }
 }
 
 #[cfg(test)]
@@ -92,10 +122,33 @@ mod tests {
     use super::*;
 
     #[test]
-    fn blockchain_initializing() {
+    fn should_be_empty_tx_pool() {
         let blockchain = Blockchain::new();
 
+        dbg!(blockchain.clone());
+        assert!(blockchain.pop_transaction().is_empty());
+    }
+
+    #[test]
+    fn add_some_transactions() {
+        let mut blockchain = Blockchain::new();
+        let tx_1 = create_mock_transaction(10);
+        let tx_2 = create_mock_transaction(20);
+
+        blockchain.add_transaction(tx_1);
+        blockchain.add_transaction(tx_2);
+
+        blockchain.new_block();
         dbg!(blockchain);
+    }
+
+
+    fn create_mock_transaction(amount: u64) -> Transaction {
+        Transaction {
+            sender: "bob".to_string(),
+            recipient: "alice".to_string(),
+            amount,
+        }
     }
 }
 

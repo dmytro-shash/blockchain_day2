@@ -35,7 +35,7 @@ impl Block {
         block
     }
 
-    pub fn calculate_hash(&self) -> BlockHash {
+pub fn calculate_hash(&self) -> BlockHash {
         let mut hashable_data = self.clone();
         hashable_data.hash = BlockHash::default();
         let serialized = serde_json::to_string(&hashable_data).unwrap();
