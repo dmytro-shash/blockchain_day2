@@ -3,9 +3,9 @@ use std::sync::{Arc, Mutex};
 use chrono::Utc;
 use thiserror::Error;
 
-use crate::types::{BlockHash, BlockVec};
 use crate::types::block::Block;
 use crate::types::transaction::Transaction;
+use crate::types::{BlockHash, BlockVec};
 
 type SyncedBlockVec = Arc<Mutex<BlockVec>>;
 pub type TransactionVec = Vec<Transaction>;
@@ -20,9 +20,7 @@ pub enum BlockchainError {
 
     #[error("Invalid hash")]
     InvalidHash,
-
 }
-
 
 #[derive(Debug, Clone)]
 pub struct Blockchain {
@@ -83,7 +81,6 @@ impl Blockchain {
         transactions_clone
     }
 
-
     /*pub fn add_block(&self, block: Block) -> Result<()> {
         let mut blocks = self.blocks.lock().unwrap();
         let last = &blocks[blocks.len() - 1];
@@ -111,7 +108,7 @@ impl Blockchain {
         let mut blocks = self.blocks.lock().unwrap();
         let last = &blocks[blocks.len() - 1];
 
-        let new_block = Block::new(0, last.hash,self.pop_transaction());
+        let new_block = Block::new(0, last.hash.to_owned(), self.pop_transaction());
 
         blocks.push(new_block);
     }
@@ -142,7 +139,6 @@ mod tests {
         dbg!(blockchain);
     }
 
-
     fn create_mock_transaction(amount: u64) -> Transaction {
         Transaction {
             sender: "bob".to_string(),
@@ -151,5 +147,3 @@ mod tests {
         }
     }
 }
-
-

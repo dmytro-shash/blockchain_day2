@@ -1,8 +1,8 @@
 use chrono::prelude::*;
-use crypto::digest::Digest;
-use crypto::sha2::Sha256;
-use ethereum_types::U256;
+
 use serde::{Deserialize, Serialize};
+
+use blake2::{Blake2s256, Digest};
 
 use crate::types::BlockHash;
 
@@ -18,11 +18,7 @@ pub struct Block {
 }
 
 impl Block {
-    pub fn new(
-        nonce: u64,
-        previous_hash: BlockHash,
-        transactions: Vec<Transaction>,
-    ) -> Block {
+    pub fn new(nonce: u64, previous_hash: BlockHash, transactions: Vec<Transaction>) -> Block {
         let mut block = Block {
             timestamp: Utc::now().timestamp_millis(),
             nonce,
@@ -35,22 +31,29 @@ impl Block {
         block
     }
 
-pub fn calculate_hash(&self) -> BlockHash {
-        let mut hashable_data = self.clone();
-        hashable_data.hash = BlockHash::default();
-        let serialized = serde_json::to_string(&hashable_data).unwrap();
+    pub fn calculate_hash(&self) -> BlockHash {
+        // сериализируем блок, где хранятся вcе метаданные (в т.ч. транзакции )
+        // следовательно включаем их все для подсчета хеша
 
+        // let mut hasher: CoreWrappzer<CtVariableCoreWrapper<Blake2sVarCore, FixedOutput>> = Blake2s::new();
+        let mut hasher = Blake2s256::new();
 
-        let mut byte_hash = <[u8; 32]>::default();
-        let mut hasher = Sha256::new();
+        hasher.update(
+            format!(
+                "{:?}",
+                (
+                    self.previous_hash.clone(),
+                    self.nonce.clone(),
+                    self.transactions.clone(),
+                    self.timestamp.clone()
+                )
+            )
+            .as_bytes(),
+        );
 
-        hasher.input_str(&serialized);
-        hasher.result(&mut byte_hash);
-
-        U256::from(byte_hash)
+        format!("{:x}", hasher.finalize())
     }
 }
-
 
 #[cfg(test)]
 mod tests {
@@ -59,20 +62,18 @@ mod tests {
     #[test]
     fn block_initializing() {
         let block = Block::new(10, BlockHash::default(), vec![]);
-
-        dbg!(block);
+        assert_eq!(block.hash, block.calculate_hash());
     }
-}
 
+}
 
 /*
 
 calculate_hash - должен включать транзакции в хеш
-насколько оправдано использование ethereum_types::U256 ? С хешом обычно не проводят математические операции по этому он может быть просто строкой \ массивом байт
+насколько опра  вдано использование ethereum_types::U256 ? С хешом обычно не проводят математические операции по этому он может быть просто строкой \ массивом байт
 create_genesis_block - генезис блок можно сминтить только 1 раз (либо если не один то нужно обнулять чейн) + в будущем у тебя чейн может прийти от другой ноды так что ты не всегда генерируешь генезис блок
 не пиши функции которые ты не используешь типо get_last_block \ get_all_blocks - код нужно поддерживать а это время 🙂
 нужно больше тестов
 
 
 */
-
